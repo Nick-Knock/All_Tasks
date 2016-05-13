@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,19 +10,33 @@ namespace Task_1_Vendor
     {
         static void Main(string[] args)
         {
-            string Num, Vendor, Verification, NextNumber;
-
+            string Num, Vendor, NextNumber;
+            bool Verification;
             Console.WriteLine("Please enter the number of the card:");
             Num = Console.ReadLine();
 
             Vendor = GetCreditCardVendor(Num);
-            Console.WriteLine(Vendor);
+            if (Vendor == "Error")
+            {
+                Console.WriteLine("You enter the wrong number, try again.");
+                Console.ReadKey();
+                return;
+            }
+            else
+                Console.WriteLine(Vendor);
 
             Verification = IsCreditCardNumberValid(Num);
-            Console.WriteLine(Verification);
+            if (Verification)
+                Console.WriteLine("The card number is valid.");
+            else
+            {
+                Console.WriteLine("The card number is not valid.");
+                Console.ReadKey();
+                return;
+            }
 
             NextNumber = GenerateNextCreditCardNumber(Num);
-            Console.WriteLine("Next generated card number is: \n"+NextNumber);
+            Console.WriteLine("Next generated card number is: \n" + NextNumber);
 
             Console.ReadKey();
         }
@@ -38,7 +52,12 @@ namespace Task_1_Vendor
                       Maestro_Master = 5,
                       Visa = 4;
 
-            if (!(Verification(Num))) { Error = "You entered the wrong number."; return Error; } // Перевірка на правильність введеного номеру
+            if (!(Verification(Num))) { return "Error"; } // Перевірка на правильність введеного номеру
+
+            if (!IsCreditCardNumberValid(Num)) 
+            {
+                Vendor = "Unknown"; return Vendor;
+            }
 
             for (int i = 0; i < Check_Num.Length; i++)
             {
@@ -46,10 +65,10 @@ namespace Task_1_Vendor
             }
 
             switch (Check_Num[0]) //Визначення вендора картки за її першими цифрами
-            {   
+            {
                 case AmExpress_JCB:
                     if (Check_Num[1] == 4 || Check_Num[1] == 7)
-                    { Vendor="AmericanExpress"; break; }
+                    { Vendor = "AmericanExpress"; break; }
                     if (Check_Num[1] == 5)
                         if (Check_Num[2] * 10 + Check_Num[3] >= 28 && Check_Num[2] * 10 + Check_Num[3] <= 89)
                         { Vendor = "JCB"; break; }
@@ -70,21 +89,25 @@ namespace Task_1_Vendor
         }
 
 
-        static string IsCreditCardNumberValid(string Num)
+        static bool IsCreditCardNumberValid(string Num)
         {
-            int Check_digit, Sum = 0;
-            string Validation;
+            int count, Check_digit, Sum = 0;
 
-            if (!(Verification(Num))) { Validation = "You entered the wrong number."; return Validation; }
+            if (!(Verification(Num))) { Console.WriteLine("You entered wrong number"); return false; } 
 
             if (Num.Length == 19)
                 Num = Num.Replace(" ", ""); // Виключаємо пробіли
             int[] Digits = new int[Num.Length];
 
-            for (int i = Num.Length - 1; i > 0; i -= 2) // Масив зі звичайними й подвоєними числами
+            for (count = Num.Length - 1; count >= 1; count -= 2) // Масив зі звичайними й подвоєними числами
             {
-                Digits[i] = Num[i] - '0';
-                Digits[i - 1] = 2 * (Num[i - 1] - '0');
+                Digits[count] = Num[count] - '0';
+                Digits[count - 1] = 2 * (Num[count - 1] - '0');
+            }
+           
+            if (count==0)
+            {
+                Digits[count] = Num[count] - '0';
             }
 
             for (int i = 0; i < Num.Length - 1; i++)
@@ -92,10 +115,10 @@ namespace Task_1_Vendor
                 Sum += Digits[i] % 10 + Digits[i] / 10; //Деякі подвоєні числа можуть складатися з двох цифр
             }
 
-            if ((Check_digit = 10 - Sum % 10) == Digits[Num.Length - 1])
-            { Validation = "The credit card number is valid"; return Validation; }
+            if ((Check_digit = (10 - Sum % 10) % 10) == Digits[Num.Length - 1])
+                return true; 
             else
-            { Validation = "The credit card number is not valid"; return Validation; }
+                return false; 
         }
 
 
@@ -123,7 +146,7 @@ namespace Task_1_Vendor
             }
 
             Total = Sum(Digits, Count - 1);
-            Digits[Count] = 10 - Total % 10;
+            Digits[Count] = (10 - Total % 10) % 10;
 
             for (int i = 0; i <= Count; i++)
             {
@@ -135,18 +158,23 @@ namespace Task_1_Vendor
 
         static int Sum(int[] Digits, int Count)
         {
+            int i;
             int Sum = Digits[Count] * 2 % 10 + Digits[Count] * 2 / 10;
-            for (int i = Count - 1; i > 0; i -= 2)
+            for (i = Count - 1; i > 0; i -= 2)
             {
                 Sum += Digits[i] + Digits[i - 1] * 2 % 10 + Digits[i - 1] * 2 / 10;
+            }
+            if (i == 0)
+            {
+                Sum += Digits[i];
             }
             return Sum;
         }
 
 
-        static bool Verification (string Num)
-        {   
-            int Prev=0;
+        static bool Verification(string Num)
+        {
+            int Prev = 0;
             for (int i = 0; i < Num.Length; i++)
                 if (Num[i] - '0' < 0 || Num[i] - '0' > 9) //Чи всі введені символи є цифрами
                     if (Num[i] == ' ' && i - Prev == 4) //Можливо присутні пробіли, що розділяють по 4 цифри

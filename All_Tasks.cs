@@ -23,7 +23,14 @@ namespace Task_1_Vendor
                 return;
             }
             else
-                Console.WriteLine(Vendor);
+                if (Vendor == "Unknown")
+                {
+                    Console.WriteLine(Vendor);
+                    Console.ReadKey();
+                    return;
+                }
+                else
+                    Console.WriteLine(Vendor);
 
             Verification = IsCreditCardNumberValid(Num);
             if (Verification)
@@ -44,8 +51,9 @@ namespace Task_1_Vendor
 
         static string GetCreditCardVendor(string Num)
         {
+            int length;
             int[] Check_Num = new int[4];
-            string Vendor, Error;
+            string Vendor="";
 
             const int AmExpress_JCB = 3, //Перші цифри номеру карток
                       Maestro = 6,
@@ -54,10 +62,9 @@ namespace Task_1_Vendor
 
             if (!(Verification(Num))) { return "Error"; } // Перевірка на правильність введеного номеру
 
-            if (!IsCreditCardNumberValid(Num)) 
-            {
-                Vendor = "Unknown"; return Vendor;
-            }
+            if (Num.Length == 19 || Num.Length == 14) //Якщо номер введений групами по 4 цифри
+                Num = Num.Replace(" ", ""); // Виключаємо пробіли
+            length = Num.Length;
 
             for (int i = 0; i < Check_Num.Length; i++)
             {
@@ -68,23 +75,31 @@ namespace Task_1_Vendor
             {
                 case AmExpress_JCB:
                     if (Check_Num[1] == 4 || Check_Num[1] == 7)
-                    { Vendor = "AmericanExpress"; break; }
+                    { 
+                      if (length==15)
+                        Vendor = "AmericanExpress"; 
+                      break; 
+                    }
                     if (Check_Num[1] == 5)
                         if (Check_Num[2] * 10 + Check_Num[3] >= 28 && Check_Num[2] * 10 + Check_Num[3] <= 89)
-                        { Vendor = "JCB"; break; }
-                    Vendor = "Unknown";
+                        {   if (length==16)
+                                Vendor = "JCB"; 
+                            break; 
+                        }
                     break;
                 case Maestro:
-                    Vendor = "Maestro"; break;
+                   if (length>=12 && length<=19) Vendor = "Maestro"; break;
                 case Maestro_Master:
                     if (Check_Num[1] == 0 || Check_Num[1] >= 6)
-                        Vendor = "Maestro";
+                       if (length >= 12 && length <= 19) Vendor = "Maestro";
                     else
-                        Vendor = "MasterCard";
+                       if (length ==16) Vendor = "MasterCard";
                     break;
-                case Visa: Vendor = "Visa"; break;
+                case Visa: if (length == 13 || length==16 || length==19) Vendor = "Visa"; break;
                 default: Vendor = "Unknown"; break;
             }
+
+            if (Vendor=="") Vendor = "Unknown";
             return Vendor;
         }
 
@@ -93,9 +108,9 @@ namespace Task_1_Vendor
         {
             int count, Check_digit, Sum = 0;
 
-            if (!(Verification(Num))) { Console.WriteLine("You entered wrong number"); return false; } 
+            if (!(Verification(Num))) { Console.WriteLine("You entered wrong number"); return false; }
 
-            if (Num.Length == 19)
+            if (Num.Length == 19 || Num.Length == 14) //Якщо номер введений групами по 4 цифри
                 Num = Num.Replace(" ", ""); // Виключаємо пробіли
             int[] Digits = new int[Num.Length];
 
@@ -123,12 +138,14 @@ namespace Task_1_Vendor
 
 
         static string GenerateNextCreditCardNumber(string Num)
-        {
+        {   
+            string Vendor2;
+            string Vendor1=GetCreditCardVendor(Num);
             int Count = 0, Total;
             string New_num = "";
             if (!(Verification(Num))) { New_num = "You entered the wrong number"; return New_num; }
 
-            if (Num.Length == 19)
+            if (Num.Length == 19 || Num.Length==14) 
                 Num = Num.Replace(" ", "");
 
             int[] Digits = new int[Num.Length];
@@ -152,6 +169,11 @@ namespace Task_1_Vendor
             {
                 New_num += Convert.ToString(Digits[i]);
             }
+
+            Vendor2=GetCreditCardVendor(New_num);
+            if (Vendor1 != Vendor2)
+                return "no more card numbers available for this vendor";
+
             return New_num;
         }
 
@@ -175,6 +197,7 @@ namespace Task_1_Vendor
         static bool Verification(string Num)
         {
             int Prev = 0;
+            if (Num.Length < 12 || Num.Length > 19) return false;
             for (int i = 0; i < Num.Length; i++)
                 if (Num[i] - '0' < 0 || Num[i] - '0' > 9) //Чи всі введені символи є цифрами
                     if (Num[i] == ' ' && i - Prev == 4) //Можливо присутні пробіли, що розділяють по 4 цифри
